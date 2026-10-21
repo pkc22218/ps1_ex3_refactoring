@@ -1,5 +1,5 @@
 # %%
-import pandas as pd
+#import pandas as pd - pandas is not used in this notebook, so we can remove it
 import matplotlib.pyplot as plt
 import polars as pl
 
