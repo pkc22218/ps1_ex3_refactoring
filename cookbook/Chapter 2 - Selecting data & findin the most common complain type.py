@@ -1,13 +1,13 @@
 # %%
-import pandas as pd
+#import pandas as pd - pandas is not used in this notebook, so we can remove it
 import matplotlib.pyplot as plt
 import polars as pl
 
 # %%
 # We're going to use a new dataset here, to demonstrate how to deal with larger datasets. This is a subset of the of 311 service requests from [NYC Open Data](https://nycopendata.socrata.com/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9).
 # because of mixed types we specify dtype to prevent any errors
-complaints = pd.read_csv("../data/311-service-requests.csv", dtype="unicode")
-complaints.head()
+pl_complaints = pl.read_csv("../data/311-service-requests.csv", infer_schema_length=0)
+pl_complaints.head()
 
 # %%
 # TODO: rewrite the above using the polars library and call the data frame pl_complaints
@@ -17,21 +17,20 @@ complaints.head()
 
 # %%
 # Selecting columns:
-complaints["Complaint Type"]
+pl_complaints.get_column("Complaint Type")
 
 # %%
 # TODO: rewrite the above using the polars library
 
 # %%
 # Get the first 5 rows of a dataframe
-complaints[:5]
+pl_complaints[:5]
 
 # %%
-# TODO: rewrite the above using the polars library
 
 # %%
 # Combine these to get the first 5 rows of a column:
-complaints["Complaint Type"][:5]
+pl_complaints.get_column("Complaint Type")[:5]
 
 # %%
 # TODO: rewrite the above using the polars library
@@ -39,22 +38,23 @@ complaints["Complaint Type"][:5]
 
 # %%
 # Selecting multiple columns
-complaints[["Complaint Type", "Borough"]]
+pl_complaints[["Complaint Type", "Borough"]]
 
 # %%
 # TODO: rewrite the above using the polars library
 
 # %%
 # What's the most common complaint type?
-complaint_counts = complaints["Complaint Type"].value_counts()
-complaint_counts[:10]
+pl_complaint_counts = pl_complaints.get_column("Complaint Type").value_counts()
+pl_complaint_counts[:10]
 
 # %%
 # TODO: rewrite the above using the polars library
 
 # %%
 # Plot the top 10 most common complaints
-complaint_counts[:10].plot(kind="bar")
+top_complaints = pl_complaint_counts[:10]
+plt.bar(top_complaints["Complaint Type"], top_complaints["count"])
 plt.title("Top 10 Complaint Types")
 plt.xlabel("Complaint Type")
 plt.ylabel("Count")
