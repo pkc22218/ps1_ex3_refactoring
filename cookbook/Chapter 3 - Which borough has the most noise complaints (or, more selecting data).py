@@ -1,6 +1,7 @@
 # %%
 import pandas as pd
 import matplotlib.pyplot as plt
+import polars as pl
 
 
 # Make the graphs a bit prettier, and bigger
@@ -19,6 +20,7 @@ complaints = pd.read_csv("../data/311-service-requests.csv", dtype="unicode")
 
 # %%
 # TODO: rewrite the above using the polars library (you might have to import it above) and call the data frame pl_complaints
+pl_complaints = pl.read_csv("../data/311-service-requests.csv", infer_schema=False)
 
 # %%
 # 3.1 Selecting only noise complaints
@@ -27,6 +29,7 @@ complaints[:5]
 
 # %%
 # TODO: rewrite the above in polars
+pl_complaints.head(5)
 
 # %%
 # To get the noise complaints, we need to find the rows where the "Complaint Type" column is "Noise - Street/Sidewalk".
@@ -35,6 +38,8 @@ noise_complaints[:3]
 
 # %%
 # TODO: rewrite the above in polars
+pl_noise_complaints = pl_complaints.filter(pl.col("Complaint Type") == "Noise - Street/Sidewalk")
+pl_noise_complaints.head(3)
 
 
 # %%
@@ -46,6 +51,9 @@ complaints[is_noise & in_brooklyn][:5]
 # %%
 # TODO: rewrite the above using the Polars library. In polars these conditions are called Expressions.
 # Check out the Polars documentation for more info.
+pl_is_noise = pl.col("Complaint Type") == "Noise - Street/Sidewalk"
+pl_in_brooklyn = pl.col("Borough") == "BROOKLYN"
+pl_complaints.filter(pl_is_noise & pl_in_brooklyn).head(5)
 
 
 # %%
@@ -56,6 +64,9 @@ complaints[is_noise & in_brooklyn][
 
 # %%
 # TODO: rewrite the above using the polars library
+pl_complaints.filter(pl_is_noise & pl_in_brooklyn).select(
+    ["Complaint Type", "Borough", "Created Date", "Descriptor"]
+).head(10)
 
 
 # %%
@@ -66,6 +77,9 @@ noise_complaints["Borough"].value_counts()
 
 # %%
 # TODO: rewrite the above using the polars library
+pl_is_noise = pl.col("Complaint Type") == "Noise - Street/Sidewalk"
+pl_noise_complaints = pl_complaints.filter(pl_is_noise)
+pl_noise_complaints["Borough"].value_counts(sort=True)
 
 
 # %%
@@ -77,6 +91,12 @@ noise_complaint_counts / complaint_counts.astype(float)
 
 # %%
 # TODO: rewrite the above using the polars library
+pl_noise_complaint_counts = pl_noise_complaints["Borough"].value_counts()
+pl_complaint_counts = pl_complaints["Borough"].value_counts()
+
+pl_complaint_counts.join(pl_noise_complaint_counts, on="Borough", how="left").with_columns(
+    (pl.col("count_right").fill_null(0) / pl.col("count")).alias("ratio")
+)
 
 
 # %%
@@ -91,3 +111,14 @@ plt.show()
 
 # %%
 # TODO: rewrite the above using the polars library. NB: polars' plotting method is sometimes unstable. You might need to use seaborn or matplotlib for plotting.
+plot_data = pl_complaint_counts.join(pl_noise_complaint_counts, on="Borough", how="left").with_columns(
+    (pl.col("count_right").fill_null(0) / pl.col("count")).alias("ratio")
+)
+
+plt.bar(plot_data["Borough"], plot_data["ratio"])
+plt.title("Noise Complaints by Borough (Normalized)")
+plt.xlabel("Borough")
+plt.ylabel("Ratio of Noise Complaints to Total Complaints")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
